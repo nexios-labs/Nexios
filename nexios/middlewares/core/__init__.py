@@ -211,9 +211,9 @@ class BaseMiddleware:
             except anyio.EndOfStream:
                 if app_exc is not None:
                     raise app_exc
-                raise RuntimeError("No response returned.")
+                pass #Partial fix 
 
-            assert message["type"] == "http.response.start"
+            assert message["type"] == "http.response.start" #type: ignore
 
             async def body_stream() -> typing.AsyncGenerator[bytes, None]:
                 async for message in recv_stream:
