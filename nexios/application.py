@@ -189,7 +189,6 @@ class NexiosApp(object):
         try:
             while True:
                 message: Message = await receive()
-                print("message : ",message)
                 if message["type"] == "lifespan.startup":
                     try:
                         if self.lifespan_context:

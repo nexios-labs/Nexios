@@ -45,30 +45,19 @@ class Channel:
         self.created = time.time()
 
     async def _send(self, payload: typing.Any) -> None:
-        match self.payload_type:
-            case "json":
-                try:
-                    await self.websocket.send_json(payload)
-                except RuntimeError as error:
-                    logging.debug(error)
-            case "text":
-                try:
-                    await self.websocket.send_text(payload) 
-                except RuntimeError as error:
-                    logging.debug(error)
-            case "bytes":
-                try:
-                    await self.websocket.send_bytes(payload)
-                except RuntimeError as error:
-                    logging.debug(error)
-            case _:
-                try:
-                    await self.websocket.send(payload)
-                except RuntimeError as error:
-                    logging.debug(error)
+        try:
+            if self.payload_type == "json":
+                await self.websocket.send_json(payload)
+            elif self.payload_type == "text":
+                await self.websocket.send_text(payload)
+            elif self.payload_type == "bytes":
+                await self.websocket.send_bytes(payload)
+            else:
+                await self.websocket.send(payload)
+        except RuntimeError as error:
+            logging.debug(error)
 
-        self.created = time.time()  # renew created time for active connecitons
-
+        self.created = time.time()
     async def _is_expired(self) -> bool:
         if not self.expires:
             return False

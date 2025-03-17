@@ -2,7 +2,6 @@ from nexios import get_application,NexiosApp
 import pytest
 from nexios.http import Request,Response
 from nexios.testing import Client
-import asyncio
 import datetime as dt
 import time
 app :NexiosApp = get_application()
@@ -26,7 +25,6 @@ import anyio
 
 @app.get("/response/stream")
 async def send_streaming_response(req: Request, res :Response):
-    lock = asyncio.Lock()
 
     async def numbers(minimum: int, maximum: int):
         # async with lock:

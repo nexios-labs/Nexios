@@ -25,16 +25,21 @@ else:  # pragma: no cover
 from nexios.types import ASGIApp
 
 P = ParamSpec("P")
-
+has_exceptiongroups = True
+if sys.version_info < (3, 11):  # pragma: no cover
+    try:
+        from exceptiongroup import BaseExceptionGroup  # type: ignore[unused-ignore,import-not-found]
+    except ImportError:
+        has_exceptiongroups = False
 
 @contextmanager
 def collapse_excgroups() -> typing.Generator[None, None, None]:
     try:
         yield
     except BaseException as exc:
-        
-        while isinstance(exc, BaseExceptionGroup) and len(exc.exceptions) == 1: #type: ignore
-            exc = exc.exceptions[0] #type: ignore
+        if has_exceptiongroups:  # pragma: no cover
+            while isinstance(exc, BaseExceptionGroup) and len(exc.exceptions) == 1: #type:ignore
+                exc = exc.exceptions[0]  #type:ignore
 
         raise exc
 

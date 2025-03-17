@@ -63,18 +63,15 @@ class BaseResponse:
         status_code: int = 200,
         headers: Optional[Dict[str, str]] = None,
         content_type: Optional[str] = None,
-        setup :bool = True
     ):
         self.charset = "utf-8"
         self.status_code: int = status_code
         self._headers: List[Tuple[bytes,bytes]] = []
-        self._cookies: List[Tuple[str, str, Dict[str, Any]]] = []
         self._body = self.render(body)
         self.headers = headers or {}
         
         self.content_type :typing.Optional[str] = content_type
-        if setup:
-            self._init_headers()
+       
 
     def render(self, content: typing.Any) -> typing.Union[bytes , memoryview]:
         if content is None:
@@ -115,7 +112,7 @@ class BaseResponse:
         secure: typing.Optional[bool] = False,
         httponly: typing.Optional[bool] = False,
         samesite: typing.Optional[typing.Literal["lax", "strict", "none"]]  = "lax",
-    ) -> None:
+    ) -> Any:
         cookie: http.cookies.BaseCookie[str] = http.cookies.SimpleCookie()
         cookie[key] = value
         if max_age is not None:
@@ -143,10 +140,13 @@ class BaseResponse:
             cookie[key]["samesite"] = samesite
         cookie_val = cookie.output(header="").strip()
         self.header("set-cookie" ,  cookie_val)
+        
+        
+        return cookie
 
-    def delete_cookie(self, key: str, path: str = "/", domain: Optional[str] = None) -> None:
+    def delete_cookie(self, key: str, path: str = "/", domain: Optional[str] = None) -> Any:
         """Delete a cookie by setting its expiry to the past."""
-        self.set_cookie(
+        cookie = self.set_cookie(
             key=key,
             value="",
             max_age=0,
@@ -154,6 +154,8 @@ class BaseResponse:
             path=path,
             domain=domain
         )
+        
+        return cookie
 
     def enable_caching(self, max_age: int = 3600, private: bool = True) -> None:
         """Enable caching with the specified max age (in seconds)."""
@@ -180,6 +182,8 @@ class BaseResponse:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Make the response callable as an ASGI application."""
+        self._init_headers()
+        
         await send({
             'type': 'http.response.start',
             'status': self.status_code,
@@ -229,7 +233,11 @@ class BaseResponse:
         
     
     
-
+        
+    
+        
+    
+    
 
 class PlainTextResponse(BaseResponse):
     def __init__(self, body:JSONType =  "", status_code: int = 200, headers: typing.Optional[Dict[str, str]]  = None, content_type: str = "text/plain"):
@@ -298,7 +306,7 @@ class FileResponse(BaseResponse):
         headers: Optional[Dict[str, str]] = None,
         content_disposition_type: str = "inline",
     ):
-        super().__init__(headers=headers,setup=False)
+        super().__init__(headers=headers)
         self.path = Path(path)
         self.filename = filename or self.path.name
         self.content_disposition_type = content_disposition_type
@@ -355,7 +363,7 @@ class FileResponse(BaseResponse):
             for range_str in ranges.split(','):
                 range = range_str.split('-')
                 start :int = int(range[0])
-                end :int =int(range[-1]) if range[-1] != "" else 0 #Partial fix
+                end :int =int(range[-1]) if range[-1] != "" else 0
                 start = int(start) if start else 0
                 end :int = int(end) if end else file_size - 1
 
@@ -377,6 +385,7 @@ class FileResponse(BaseResponse):
                 self.status_code = 206  
 
         except ValueError as _: 
+         
             self.header('content-range',f'bytes */{file_size}')
             self.status_code = 416  
 
@@ -495,7 +504,7 @@ class StreamingResponse(BaseResponse):
         headers: Optional[Dict[str, str]] = None,
         content_type: str = "text/plain",
     ):
-        super().__init__(headers=headers,setup=False)
+        super().__init__(headers=headers)
         
         self.content_iterator = content
         self.status_code = status_code
@@ -577,7 +586,7 @@ class NexiosResponse:
             cls._instance._initialized = False #type:ignore
         return cls._instance
     def __init__(self):
-        self._response: BaseResponse = BaseResponse(setup = False)
+        self._response: BaseResponse = BaseResponse()
         self._cookies: List[Dict[str, Any]] = []
         self._status_code = self._response.status_code
        
@@ -586,6 +595,10 @@ class NexiosResponse:
     def headers(self):
         return MutableHeaders({k.decode("utf-8"): v.decode("utf-8") for k, v in self._response._headers}) #type:ignore
     
+    
+    @property
+    def cookies(self):
+        return self._cookies #type:ignore
     def remove_header(self, key: str) -> "NexiosResponse":
         """Remove a header from the response."""
         self._response._headers = [(k, v) for k, v in self._response._headers if k.decode("latin-1").lower() != key.lower()] #type:ignore
@@ -598,25 +611,27 @@ class NexiosResponse:
     def content_type(self):
         return self._response.content_type
     
+    @property
+    def content_length(self):
+        content_length = self.headers.get("content-length")
+        if not content_length:
+            return str(len(self.body))
+        
+        return content_length
+        
+    
     def status_code(self):
         return self._response.status_code
     
     def _preserve_headers_and_cookies(self, new_response: BaseResponse) -> BaseResponse:
         """Preserve headers and cookies when switching to a new response."""
         for key, value in self.headers.items():
-            new_response.header(key, value, overide=True)
-
-        for cookie in self._cookies:
-            new_response.set_cookie(**cookie)            
+            new_response.header(key, value, overide=True)       
 
         return new_response
     def has_header(self, key: str) -> bool:
         """Check if a header is present in the response."""
         return key.lower() in (k.lower() for k in self.headers.keys())
-
-    def has_cookie(self, key: str) -> bool:
-        """Check if a cookie is present in the response."""
-        return any(cookie.get("key") == key for cookie in self._cookies)
     def text(self, content: JSONType, status_code: int = 200, headers: Dict[str, Any] = {}):
         """Send plain text or HTML content."""
         new_response = PlainTextResponse(body=content, status_code=status_code, headers=headers)
@@ -698,7 +713,6 @@ class NexiosResponse:
         
             
         self._response.header(key, value,overide=overide)
-        self.headers[key] = value  # Update the headers dictionary
         return self
 
     def set_cookie(
@@ -725,17 +739,6 @@ class NexiosResponse:
             httponly=httponly,
             samesite=samesite
         )
-        self._cookies.append({
-            "key": key,
-            "value": value,
-            "max_age": max_age,
-            "expires": expires,
-            "path": path,
-            "domain": domain,
-            "secure": secure,
-            "httponly": httponly,
-            "samesite": samesite
-        })
         return self
 
     def delete_cookie(
@@ -750,6 +753,7 @@ class NexiosResponse:
             path=path,
             domain=domain,
         )
+        
        
         return self
 
@@ -788,12 +792,18 @@ class NexiosResponse:
             self.set_cookie(**cookie)
         return self
     
-    def set_headers(self, headers: Dict[str, str]):
+    def set_headers(self, headers: Dict[str, str], overide_all :bool = False):
+        if overide_all:
+            self._response._headers =  [(bytes(str(k), 'utf-8'), bytes(str(v), 'utf-8')) for k, v in d.items()] #type:ignore
+            return
         """Set multiple headers at once."""
         for key, value in headers.items():
             self.header(key, value)
         return self
 
+    
+    def set_body(self, new_body :Any):
+        self._response._body = new_body #type:ignore
     def get_response(self) -> BaseResponse:
         """Make the response ASGI-compatible."""
         return self._response
