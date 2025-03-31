@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="/js/client.js" type="text/javascript"></script>
+    <script>
+      const rpc = createRpcClient("/rpc");
+    </script>
+
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>Todos</h1>
+    <ul style="background-color: #333; padding: 6px 20px; color: #fff">
+      {% for todo in todos %}
+      <pre>{{ todo }}</pre>
+      <button
+        onclick="rpc.TodoServiceUpdate('{{ todo.id }}', {'completed': false})"
+      >
+        Complete
+      </button>
+      <button onclick="rpc.TodoServiceDelete('{{ todo.id }}')">Delete</button>
+      {% endfor %}
+    </ul>
+  </body>
+</html>

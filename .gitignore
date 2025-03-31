@@ -42,3 +42,5 @@ static/
 # 🔹 Node.js Related Files
 # ==============================
 /**/node_modules/
+
+.DS_Store
