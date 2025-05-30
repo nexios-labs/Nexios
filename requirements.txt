@@ -10,7 +10,7 @@ pydantic>=2.0,<3.0
 
 # Dev dependencies
 mypy>=0.910,<1.16
-pytest~=8.3.4
+pytest~=8.3.5
 mkdocs==1.2.3
 coverage>=6.3,<8.0
 httpx>=0.23.3,<0.29.0
