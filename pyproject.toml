@@ -50,7 +50,7 @@ granian = ["granian>=1.2.0"]
 all = ["granian>=1.2.0", "pyjwt>=2.7.0", "jinja2>=3.1.6"]
 dev = [
     "mypy>=1.15.0",
-    "pytest>=8.3.4,<8.4.0",
+    "pytest>=8.3.4,<8.5.0",
     "mkdocs>=1.2.3",
     "coverage>=6.3,<8.0",
     "httpx>=0.23.3,<0.29.0",

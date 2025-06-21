@@ -1,6 +1,6 @@
 -r requirements.txt
 mypy>=1.15.0
-pytest>=8.3.4,<8.4.0
+pytest>=8.3.4,<8.5.0
 mkdocs>=1.2.3
 coverage>=6.3,<8.0
 httpx>=0.23.3,<0.29.0
