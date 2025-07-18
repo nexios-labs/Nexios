@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Dict, List, Optional, Type, Union,TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -22,6 +22,7 @@ from .models import Response as OpenAPIResponse
 from .models import (
     Schema,
 )
+
 if TYPE_CHECKING:
     from nexios import NexiosApp
 
