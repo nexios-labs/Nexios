@@ -1,5 +1,8 @@
 import asyncio
 import typing
+from enum import Enum
+
+from pydantic import BaseModel
 
 from nexios.dependencies import Context, current_context
 from nexios.http import Request, Response
@@ -7,8 +10,6 @@ from nexios.http.response import BaseResponse
 from nexios.types import ASGIApp, Receive, Scope, Send
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
-from pydantic import BaseModel
-from enum import Enum
 
 
 async def request_response(
