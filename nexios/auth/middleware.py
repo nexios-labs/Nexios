@@ -5,12 +5,11 @@ import typing
 
 from typing_extensions import Annotated, Doc
 
+from nexios import logging
 from nexios.http import Request, Response
 from nexios.middleware.base import BaseMiddleware
 
 from .base import AuthenticationBackend, UnauthenticatedUser
-from nexios import logging
-
 
 logger = logging.create_logger(__name__)
 
